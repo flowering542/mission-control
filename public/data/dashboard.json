@@ -1,0 +1,84 @@
+{
+  "updatedAt": "2026-03-02T22:00:00+00:00",
+  "cronJobs": [
+    {
+      "id": "79c7090b-5bd5-4f1e-a8d6-a44b20236816",
+      "name": "Mission Control 每日更新",
+      "schedule": "cron 0 6 * * * @ Asia/Shanghai",
+      "next": "<1m ago",
+      "last": "3d ago",
+      "status": "running"
+    },
+    {
+      "id": "790a1814-eb7f-4216-980a-dafdf4169d7f",
+      "name": "每日综合简报",
+      "schedule": "cron 0 8 * * * @ Asia/Shanghai",
+      "next": "in 2h",
+      "last": "3d ago",
+      "status": "ok"
+    },
+    {
+      "id": "2632d6a8-810f-4844-8f7e-d29b945ac5b1",
+      "name": "推特日报",
+      "schedule": "cron 30 9 * * * @ Asia/Shanghai",
+      "next": "in 3h",
+      "last": "3d ago",
+      "status": "error"
+    },
+    {
+      "id": "d9d1cb59-7d1a-43c4-a5b2-411e36c40902",
+      "name": "社交媒体热点",
+      "schedule": "cron 0 12 * * * @ Asia/Shanghai",
+      "next": "in 6h",
+      "last": "3d ago",
+      "status": "ok"
+    },
+    {
+      "id": "5fa88aae-a4cb-40d2-92d7-4ffe3c269f4c",
+      "name": "AI商业价值周报",
+      "schedule": "cron 0 8 * * 1 @ Asia/Shanghai",
+      "next": "in 6d",
+      "last": "-",
+      "status": "idle"
+    },
+    {
+      "id": "16a4ef80-5d2c-4566-99eb-0e9dfc477a60",
+      "name": "竞品追踪",
+      "schedule": "cron 0 20 * * 1 @ Asia/Shanghai",
+      "next": "in 7d",
+      "last": "4d ago",
+      "status": "ok"
+    }
+  ],
+  "system": {
+    "disk": "/dev/vda1 40G 24G 17G 59%",
+    "memory": "3.6Gi total, 1.3Gi used, 1.6Gi free, 2.3Gi available",
+    "cpu": "load average: 0.16, 0.03, 0.01 | 100% idle",
+    "uptime": "6:20"
+  },
+  "proxy": {
+    "status": "ok",
+    "responseCode": 200
+  },
+  "skills": [
+    "self-improving-agent",
+    "agent-browser",
+    "arxiv-daily",
+    "deepreader",
+    "find-skills",
+    "github",
+    "github-ai-trends",
+    "memory",
+    "newsnow",
+    "notebooklm-mcp",
+    "notion",
+    "obsidian",
+    "summarize",
+    "taste-skill",
+    "taste-skill-openclaw",
+    "tavily-search",
+    "twitter-daily",
+    "weather"
+  ],
+  "latestBriefing": "2026-02-28 记忆日志：1. Feishu 推送修复完成，移除冲突插件后测试成功；2. 定时任务状态：8点简报已补推，9:30推特日报和6点Mission Control需更新delivery配置；3. 学习OpenClaw架构：调度中心、四大组件、动态提示词拼装、插件扩展机制；4. Taste-Skill封装完成，可生成高质量前端代码。待办：更新cron任务配置、测试Taste-Skill、集成更多GitHub AI Trends项目。"
+}

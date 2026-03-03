@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mission Control | OpenClaw Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .bento-card {
+      background: white;
+      border-radius: 2rem;
+      border: 1px solid rgba(228, 228, 231, 0.5);
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+    .skeleton { 
+      background: linear-gradient(90deg, #f4f4f5 25%, #e4e4e7 50%, #f4f4f5 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+  <header class="bg-white border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div class="space-y-3">
+          <div class="flex items-center gap-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100">
+              <div class="w-2 h-2 rounded-full bg-emerald-500"></div>
+              <span class="text-xs font-medium text-emerald-700">系统运行中</span>
+            </div>
+            <span class="text-xs text-gray-400 font-mono">v2.0.0</span>
+          </div>
+          <h1 class="text-4xl md:text-6xl font-semibold tracking-tight text-gray-900">Mission Control</h1>
+          <p class="text-base text-gray-500 max-w-lg leading-relaxed">OpenClaw 自动化工作流监控中心</p>
+        </div>
+        <div class="flex items-center gap-8">
+          <div class="text-right">
+            <p class="text-4xl font-semibold text-gray-900" id="health-score">--</p>
+            <p class="text-xs text-gray-400 uppercase mt-1">系统健康度</p>
+          </div>
+          <div class="w-px h-16 bg-gray-200"></div>
+          <div class="text-right">
+            <p class="text-4xl font-semibold text-emerald-600" id="active-tasks">--</p>
+            <p class="text-xs text-gray-400 uppercase mt-1">活跃任务</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div class="bento-card md:col-span-2 md:row-span-2 p-8">
+        <div id="cron-jobs"></div>
+      </div>
+      <div class="bento-card p-6">
+        <div id="system-metrics"></div>
+      </div>
+      <div class="bento-card p-6">
+        <div id="quick-actions"></div>
+      </div>
+      <div class="bento-card md:col-span-2 p-6">
+        <div id="github-trends"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    async function loadData() {
+      try {
+        const [cron, sys, trends] = await Promise.all([
+          fetch('/api/cron').then(r => r.json()),
+          fetch('/api/system').then(r => r.json()),
+          fetch('/api/trends').then(r => r.json())
+        ]);
+        
+        renderCronJobs(cron.cronJobs);
+        renderSystem(sys);
+        renderTrends(trends.repos);
+        updateHeader(cron.cronJobs);
+      } catch (e) {
+        console.error('Load error:', e);
+      }
+    }
+
+    function renderCronJobs(jobs) {
+      const ok = jobs.filter(j => j.status === 'ok').length;
+      document.getElementById('cron-jobs').innerHTML = `
+        <div class="flex justify-between mb-6">
+          <div>
+            <h2 class="text-xl font-semibold">定时任务</h2>
+            <p class="text-sm text-gray-500 mt-1">${ok}/${jobs.length} 运行正常</p>
+          </div>
+        </div>
+        <div class="space-y-3">
+          ${jobs.map((j, i) => `
+            <div class="fade-in flex items-center gap-4 p-4 rounded-2xl bg-gray-50" style="animation-delay:${i*0.05}s">
+              <div class="w-8 h-8 rounded-xl ${j.status==='ok'?'bg-emerald-50 text-emerald-600':'bg-red-50 text-red-600'} flex items-center justify-center font-bold">
+                ${j.status==='ok'?'✓':'!'}
+              </div>
+              <div class="flex-1">
+                <h3 class="font-medium">${j.name}</h3>
+                <p class="text-xs text-gray-500">${j.schedule}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-gray-400">下次</p>
+                <p class="text-sm">${j.next}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderSystem(data) {
+      const disk = parseInt(data.system.disk) || 0;
+      document.getElementById('system-metrics').innerHTML = `
+        <h2 class="text-lg font-semibold mb-4">系统状态</h2>
+        <div class="space-y-4">
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span>代理</span>
+              <span class="${data.proxy.status==='ok'?'text-emerald-600':'text-red-600'}">${data.proxy.status==='ok'?'正常':'异常'}</span>
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full"><div class="h-full ${data.proxy.status==='ok'?'bg-emerald-500':'bg-red-500'} rounded-full" style="width:${data.proxy.status==='ok'?'100%':'0%'}"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span>磁盘</span>
+              <span>${data.system.disk}</span>
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full"><div class="h-full ${disk>80?'bg-red-500':'bg-emerald-500'} rounded-full" style="width:${disk}%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span>内存</span>
+              <span>${data.system.memory}</span>
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full"><div class="h-full bg-blue-500 rounded-full" style="width:45%"></div></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderTrends(repos) {
+      document.getElementById('github-trends').innerHTML = `
+        <div class="flex justify-between mb-4">
+          <h2 class="text-lg font-semibold">GitHub AI Trends</h2>
+          <span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded-full">实时</span>
+        </div>
+        <div class="flex flex-col md:flex-row gap-4">
+          ${repos.slice(0,3).map((r,i) => `
+            <a href="${r.url}" target="_blank" class="fade-in flex-1 p-4 rounded-2xl bg-gray-50 hover:bg-gray-100 transition" style="animation-delay:${i*0.1}s">
+              <div class="flex justify-between items-start mb-2">
+                <span class="font-semibold">${r.owner}/${r.name}</span>
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+              </div>
+              <p class="text-xs text-gray-500 mb-2 line-clamp-2">${r.description}</p>
+              <div class="flex justify-between">
+                <span class="text-xs text-amber-600">★ ${r.stars.toLocaleString()}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full ${r.difficulty==='advanced'?'bg-red-100 text-red-700':r.difficulty==='beginner'?'bg-emerald-100 text-emerald-700':'bg-amber-100 text-amber-700'}">${r.difficulty==='advanced'?'高级':r.difficulty==='beginner'?'入门':'进阶'}</span>
+              </div>
+            </a>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function updateHeader(jobs) {
+      const ok = jobs.filter(j => j.status === 'ok').length;
+      document.getElementById('health-score').textContent = Math.round((ok/jobs.length)*100) + '%';
+      document.getElementById('active-tasks').textContent = jobs.length;
+    }
+
+    loadData();
+    setInterval(loadData, 30000);
+  </script>
+</body>
+</html>
