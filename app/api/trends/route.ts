@@ -23,36 +23,69 @@ function parseTrendsReport(content: string): TrendRepo[] {
   const lines = content.split('\n')
   
   let currentCategory = ''
+  let currentRepo: Partial<TrendRepo> = {}
   
-  for (const line of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    
     // Detect category
     if (line.startsWith('## ')) {
       currentCategory = line.replace('## ', '').trim()
       continue
     }
     
-    // Parse repo entry
-    const repoMatch = line.match(/📦 \*\*(\w+)\/(\w+)\*\*/)
-    const starsMatch = line.match(/⭐ ([\d,]+)/)
-    const descMatch = line.match(/\s{3}(.+)$/)
-    const urlMatch = line.match(/🔗 (https:\/\/github\.com\/.+)/)
-    const langMatch = line.match(/📝 (\w+)/)
-    
-    if (repoMatch && starsMatch) {
-      const difficulty = line.includes('🟢') ? 'beginner' : 
-                        line.includes('🟡') ? 'intermediate' : 'advanced'
+    // Parse repo entry - new format
+    // 📦 项目名称: owner/repo
+    const repoMatch = line.match(/📦 项目名称: (\w+)\/(\w+)/)
+    if (repoMatch) {
+      // Save previous repo if exists
+      if (currentRepo.name && currentRepo.owner) {
+        repos.push(currentRepo as TrendRepo)
+      }
       
-      repos.push({
+      currentRepo = {
         owner: repoMatch[1],
         name: repoMatch[2],
-        stars: parseInt(starsMatch[1].replace(/,/g, '')),
-        description: descMatch?.[1] || '',
-        url: urlMatch?.[1] || `https://github.com/${repoMatch[1]}/${repoMatch[2]}`,
         category: currentCategory,
-        difficulty,
-        language: langMatch?.[1] || 'Unknown',
-      })
+        difficulty: line.includes('🔴') ? 'advanced' : 
+                   line.includes('🟡') ? 'intermediate' : 'beginner',
+      }
     }
+    
+    // ⭐ Stars: number
+    const starsMatch = line.match(/⭐ Stars: ([\d,]+)/)
+    if (starsMatch && currentRepo.name) {
+      currentRepo.stars = parseInt(starsMatch[1].replace(/,/g, ''))
+    }
+    
+    // 📝 项目简介:
+    if (line.includes('📝 项目简介:') && currentRepo.name) {
+      // Description is on the next line, indented
+      if (i + 1 < lines.length) {
+        const descLine = lines[i + 1].trim()
+        if (descLine && !descLine.startsWith('🔗')) {
+          currentRepo.description = descLine
+        }
+      }
+    }
+    
+    // 🔗 相关链接:
+    // GitHub: https://github.com/owner/repo
+    const urlMatch = line.match(/GitHub: (https:\/\/github\.com\/.+)/)
+    if (urlMatch && currentRepo.name) {
+      currentRepo.url = urlMatch[1]
+    }
+    
+    // 📝 主要语言: language
+    const langMatch = line.match(/📝 主要语言: (\w+)/)
+    if (langMatch && currentRepo.name) {
+      currentRepo.language = langMatch[1]
+    }
+  }
+  
+  // Don't forget the last repo
+  if (currentRepo.name && currentRepo.owner) {
+    repos.push(currentRepo as TrendRepo)
   }
   
   return repos.slice(0, 12) // Return top 12
