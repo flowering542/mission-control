@@ -81,21 +81,17 @@ export function DashboardContent() {
         <BentoGrid>
           <BentoCard colSpan={2} rowSpan={2} delay={0}>
             <div className="p-8 h-full">
-              <CronJobsPanel jobs={data?.cron_jobs} loading={loading} />
+              <CronJobsPanel />
             </div>
           </BentoCard>
           <BentoCard colSpan={1} delay={0.1}>
             <div className="p-6">
-              <SystemMetrics 
-                diskUsage={data?.system?.disk_usage} 
-                memoryUsage={data?.system?.memory_usage}
-                loading={loading}
-              />
+              <SystemMetrics />
             </div>
           </BentoCard>
           <BentoCard colSpan={1} delay={0.2}>
             <div className="p-6">
-              <QuickActions todayStats={data?.today_stats} />
+              <QuickActions />
             </div>
           </BentoCard>
           <BentoCard colSpan={2} delay={0.3}>
