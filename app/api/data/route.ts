@@ -4,8 +4,8 @@ import path from 'path'
 
 export async function GET() {
   try {
-    // 读取数据文件
-    const dataPath = path.join(process.cwd(), '..', '..', 'data', 'daily-data.json')
+    // 读取数据文件 - 使用绝对路径
+    const dataPath = '/root/.openclaw/workspace/mission-control/data/daily-data.json'
     
     // 如果文件不存在，返回默认数据
     if (!fs.existsSync(dataPath)) {

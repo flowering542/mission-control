@@ -46,11 +46,19 @@ const statusConfig = {
   },
 }
 
-export function CronJobsPanel() {
-  const [jobs, setJobs] = useState<CronJob[]>([])
-  const [loading, setLoading] = useState(true)
+export function CronJobsPanel({ jobs: propJobs }: { jobs?: CronJob[] }) {
+  const [jobs, setJobs] = useState<CronJob[]>(propJobs || [])
+  const [loading, setLoading] = useState(!propJobs)
 
   useEffect(() => {
+    // 如果传入了 jobs，使用传入的
+    if (propJobs && propJobs.length > 0) {
+      setJobs(propJobs)
+      setLoading(false)
+      return
+    }
+    
+    // 否则自己获取
     fetch('/api/cron')
       .then(res => res.json())
       .then(data => {
@@ -58,7 +66,7 @@ export function CronJobsPanel() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [])
+  }, [propJobs])
 
   if (loading) {
     return (

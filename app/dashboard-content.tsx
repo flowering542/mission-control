@@ -81,7 +81,7 @@ export function DashboardContent() {
         <BentoGrid>
           <BentoCard colSpan={2} rowSpan={2} delay={0}>
             <div className="p-8 h-full">
-              <CronJobsPanel />
+              <CronJobsPanel jobs={data?.cron_jobs} />
             </div>
           </BentoCard>
           <BentoCard colSpan={1} delay={0.1}>
