@@ -61,7 +61,7 @@ function parseTrendsReport(content: string): TrendRepo[] {
 export async function GET() {
   try {
     // Try to read existing report first
-    const reportPath = join(process.cwd(), '..', '..', 'skills', 'github-ai-trends', 'reports', `detailed-${new Date().toISOString().slice(0,10).replace(/-/g,'')}.md`)
+    const reportPath = '/root/.openclaw/workspace/skills/github-ai-trends/reports/' + `detailed-${new Date().toISOString().slice(0,10).replace(/-/g,'')}.md`
     
     let repos: TrendRepo[] = []
     
