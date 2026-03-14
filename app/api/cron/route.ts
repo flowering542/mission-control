@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { execSync } from 'child_process'
+import { TaskService } from '@/lib/task-service'
 
 export async function GET() {
   try {
@@ -10,14 +11,34 @@ export async function GET() {
     })
     
     const data = JSON.parse(output)
-    const cronJobs = data.jobs?.map((job: any) => ({
-      id: job.id,
-      name: job.name,
-      schedule: job.schedule?.expr || 'unknown',
-      next: job.state?.nextRunAtMs ? formatTime(job.state.nextRunAtMs) : '--',
-      last: job.state?.lastRunAtMs ? formatTime(job.state.lastRunAtMs) : '--',
-      status: getStatus(job)
-    })) || []
+    const recentExecutions = TaskService.getAllRecentExecutions()
+    
+    const cronJobs = await Promise.all(
+      (data.jobs || []).map(async (job: any) => {
+        const stats = TaskService.getTaskStats(job.name)
+        const history = TaskService.getTaskHistory(job.name, 10)
+        const meta = TaskService.getTaskMeta(job.name)
+        const lastExecution = recentExecutions.get(job.name)
+        const consecutiveFailures = TaskService.getConsecutiveFailures(job.name)
+        
+        return {
+          id: job.id,
+          name: job.name,
+          displayName: meta?.displayName || job.name,
+          category: meta?.category || 'unknown',
+          description: meta?.description || '',
+          icon: meta?.icon || 'circle',
+          priority: meta?.priority || 5,
+          schedule: job.schedule?.expr || 'unknown',
+          next: formatTime(job.state?.nextRunAtMs),
+          last: formatTime(job.state?.lastRunAtMs),
+          status: getStatus(job, lastExecution, consecutiveFailures, meta),
+          stats,
+          history,
+          consecutiveFailures
+        }
+      })
+    )
 
     return NextResponse.json({ cronJobs })
   } catch (error) {
@@ -29,27 +50,31 @@ export async function GET() {
   }
 }
 
-function formatTime(timestampMs: number): string {
-  const date = new Date(timestampMs)
-  const now = new Date()
-  const diffMs = date.getTime() - now.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  
-  if (diffMins < 0) {
-    return '刚刚'
-  } else if (diffMins < 60) {
-    return `${diffMins}分钟后`
-  } else if (diffHours < 24) {
-    return `${diffHours}小时后`
-  } else {
-    return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-  }
+function formatTime(timestampMs?: number): string {
+  if (!timestampMs) return '--'
+  const diff = timestampMs - Date.now()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 0) return '刚刚'
+  if (mins < 60) return `${mins}分钟后`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}小时后`
+  return new Date(timestampMs).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
-function getStatus(job: any): 'ok' | 'error' | 'warning' | 'running' | 'idle' {
-  if (job.state?.lastStatus === 'error') return 'error'
+function getStatus(
+  job: any, 
+  lastExecution?: any, 
+  consecutiveFailures?: number,
+  meta?: any
+): 'ok' | 'error' | 'warning' | 'running' | 'idle' | 'critical' {
+  // 连续失败超过阈值
+  if (consecutiveFailures && meta && consecutiveFailures >= meta.alertThreshold) {
+    return 'critical'
+  }
+  
   if (job.state?.lastStatus === 'running') return 'running'
+  if (lastExecution?.status === 'failed') return 'error'
+  if (lastExecution?.status === 'degraded') return 'warning'
   if (job.state?.lastStatus === 'ok') return 'ok'
   return 'idle'
 }

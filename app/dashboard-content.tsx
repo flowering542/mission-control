@@ -6,6 +6,7 @@ import { CronJobsPanel } from "@/components/dashboard/cron-jobs-panel"
 import { SystemMetrics } from "@/components/dashboard/system-metrics"
 import { QuickActions } from "@/components/dashboard/quick-actions"
 import { GitHubTrends } from "@/components/dashboard/github-trends"
+import { AlertCenter } from "@/components/dashboard/alert-center"
 import { BentoGrid, BentoCard } from "@/components/ui/bento-grid"
 import { LiveBadge } from "@/components/ui/animated-elements"
 
@@ -76,6 +77,8 @@ export function DashboardContent() {
           </div>
         </div>
       </header>
+
+      <AlertCenter />
 
       <main className="max-w-[1400px] mx-auto px-6 py-8">
         <BentoGrid>
